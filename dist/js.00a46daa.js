@@ -117,13 +117,39 @@ parcelRequire = (function (modules, cache, entry, globalName) {
   }
 
   return newRequire;
-})({"js/model.js":[function(require,module,exports) {
+})({"js/storage.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.setPriority = exports.removeItem = exports.getShoppingList = exports.getCompletedList = exports.clearCompleted = exports.addToShoppingList = exports.addToCompletedList = void 0;
+exports.saveToStore = exports.getFromStore = void 0;
+const saveToStore = function ({
+  shoppingList,
+  completedList
+}) {
+  window.localStorage.setItem("shoppingApp_active", JSON.stringify(shoppingList));
+  window.localStorage.setItem("shoppingApp_completed", JSON.stringify(completedList));
+};
+exports.saveToStore = saveToStore;
+const getFromStore = function () {
+  const getActive = window.localStorage.getItem("shoppingApp_active");
+  const getCompleted = window.localStorage.getItem("shoppingApp_completed");
+  console.log(getActive, getCompleted);
+  return {
+    active: getActive ? JSON.parse(getActive) : [],
+    completed: getCompleted ? JSON.parse(getCompleted) : []
+  };
+};
+exports.getFromStore = getFromStore;
+},{}],"js/model.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.setPriority = exports.removeItem = exports.getShoppingList = exports.getCompletedList = exports.clearCompleted = exports.bootUp = exports.addToShoppingList = exports.addToCompletedList = void 0;
+var _storage = require("./storage");
 let shoppingList = [];
 let completedList = [];
 const addToShoppingList = item => {
@@ -132,6 +158,10 @@ const addToShoppingList = item => {
     id: itemID,
     item,
     priority: "normal"
+  });
+  (0, _storage.saveToStore)({
+    shoppingList,
+    completedList
   });
 };
 exports.addToShoppingList = addToShoppingList;
@@ -145,17 +175,20 @@ const setPriority = (itemID, priority) => {
     }
     return item;
   });
+  (0, _storage.saveToStore)({
+    shoppingList,
+    completedList
+  });
 };
 exports.setPriority = setPriority;
 const removeItem = itemID => {
-  const confirm = window.confirm("Do you really want to remove the item?");
-  if (confirm) {
-    shoppingList = shoppingList.filter(({
-      id
-    }) => id !== itemID);
-    return true;
-  }
-  return false;
+  shoppingList = shoppingList.filter(({
+    id
+  }) => id !== itemID);
+  (0, _storage.saveToStore)({
+    shoppingList,
+    completedList
+  });
 };
 exports.removeItem = removeItem;
 const getShoppingList = () => shoppingList;
@@ -168,13 +201,32 @@ const addToCompletedList = itemID => {
     id
   }) => id !== itemID);
   completedList = [getItem, ...completedList];
+  (0, _storage.saveToStore)({
+    shoppingList,
+    completedList
+  });
 };
 exports.addToCompletedList = addToCompletedList;
 const getCompletedList = () => completedList;
 exports.getCompletedList = getCompletedList;
-const clearCompleted = () => completedList = [];
+const clearCompleted = () => {
+  completedList = [];
+  (0, _storage.saveToStore)({
+    shoppingList,
+    completedList
+  });
+};
 exports.clearCompleted = clearCompleted;
-},{}],"js/item.js":[function(require,module,exports) {
+const bootUp = () => {
+  const {
+    active,
+    completed
+  } = (0, _storage.getFromStore)();
+  shoppingList = active;
+  completedList = completed;
+};
+exports.bootUp = bootUp;
+},{"./storage":"js/storage.js"}],"js/item.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -258,6 +310,14 @@ shoppingListDiv.addEventListener("click", function (evt) {
     //Render View
     (0, _view.renderShoppingList)();
   }
+  if (evt.target.classList.contains("remove-btn")) {
+    const itemID = evt.target.parentElement.getAttribute("data-id");
+    const confirm = window.confirm("Do you really want to delete this item?");
+    if (confirm) {
+      (0, _model.removeItem)(itemID);
+      (0, _view.renderShoppingList)();
+    }
+  }
 
   // Remove button
   if (evt.target.classList.contains("remove-btn")) {
@@ -293,6 +353,13 @@ clearCompletedBtn.addEventListener("click", function (evt) {
   (0, _model.clearCompleted)();
   (0, _view.renderCompletedList)();
 });
+
+//Immediately invoked function expressions (IIFE)
+(() => {
+  (0, _model.bootUp)();
+  (0, _view.renderShoppingList)();
+  (0, _view.renderCompletedList)();
+})();
 },{"./model":"js/model.js","./view":"js/view.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
@@ -318,7 +385,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51011" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55604" + '/');
   ws.onmessage = function (event) {
     checkedAssets = {};
     assetsToAccept = [];
