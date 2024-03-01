@@ -4,5 +4,6 @@ This template uses Parcel bundler. You can build your website in the src/ folder
 
 **Instructions**
 
+- Install Dependencies : `npm i`
 - Development : `npm run dev`
 - Production Build: `npm run build`
